@@ -1,3 +1,13 @@
-# No external dependencies are required for this chatbot.
-# The chatbot uses only Python standard library modules.
-# Run with Python 3.7 or later.
+1.System Requirements
+Programming Language: Python 3.8+
+
+2.Libraries:
+*tweepy (Twitter API)
+*nltk, spacy (NLP preprocessing)
+*scikit-learn (ML models)
+*tensorflow/keras or pytorch (DL models, optional)
+*matplotlib, seaborn (visualization)
+
+3.Hardware:
+*Minimum: 4 GB RAM, Dual‑core CPU
+*Recommended: 8 GB RAM, GPU for deep learning
