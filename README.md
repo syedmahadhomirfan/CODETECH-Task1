@@ -39,3 +39,5 @@ Key Highlights:
 *Practical Impact: Real‑time analysis of trending hashtags or topics.
 *Scalable: Can expand from rule‑based to deep learning models.
 *Applications: Marketing, politics, customer feedback, social media analytics.
+output attached with image link
+<img width="1920" height="1080" alt="Screenshot (144)" src="https://github.com/user-attachments/assets/9d1f3908-98a1-43ce-abd2-7df8b0f289e3" />
