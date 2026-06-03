@@ -1,0 +1,136 @@
+import argparse
+import csv
+import os
+import sys
+
+try:
+    import pandas as pd
+except ImportError:
+    pd = None
+
+import nltk
+from nltk.sentiment import SentimentIntensityAnalyzer
+
+
+def ensure_vader():
+    try:
+        nltk.data.find('sentiment/vader_lexicon.zip')
+    except LookupError:
+        nltk.download('vader_lexicon', quiet=True)
+
+
+def normalize_text(text: str) -> str:
+    return text.strip()
+
+
+def classify_sentiment(text: str, analyzer: SentimentIntensityAnalyzer) -> dict:
+    cleaned = normalize_text(text)
+    scores = analyzer.polarity_scores(cleaned)
+    compound = scores['compound']
+    if compound >= 0.05:
+        label = 'positive'
+    elif compound <= -0.05:
+        label = 'negative'
+    else:
+        label = 'neutral'
+    return {
+        'text': cleaned,
+        'compound': compound,
+        'label': label,
+        'scores': scores,
+    }
+
+
+def classify_tweet_lines(lines, analyzer):
+    return [classify_sentiment(line, analyzer) for line in lines if line.strip()]
+
+
+def read_csv_tweets(path, delimiter=',', no_header=False):
+    if pd is not None:
+        if no_header:
+            df = pd.read_csv(path, dtype=str, keep_default_na=False, delimiter=delimiter, header=None)
+            return df.iloc[:, 0].astype(str).tolist()
+
+        df = pd.read_csv(path, dtype=str, keep_default_na=False, delimiter=delimiter)
+        columns = [col.lower() for col in df.columns]
+        if 'text' in columns:
+            return df.iloc[:, columns.index('text')].astype(str).tolist()
+        if df.shape[1] == 1:
+            return df.iloc[:, 0].astype(str).tolist()
+        raise ValueError("CSV must contain a 'text' column or a single column of tweet text. Use --no-header when the file has no header row.")
+
+    with open(path, 'r', encoding='utf-8', newline='') as fh:
+        reader = csv.reader(fh, delimiter=delimiter)
+        rows = list(reader)
+
+    if not rows:
+        return []
+
+    if no_header:
+        return [row[0] for row in rows if row]
+
+    header = rows[0]
+    if header and any(h.lower() == 'text' for h in header):
+        index = [h.lower() for h in header].index('text')
+        tweets = []
+        for row in rows[1:]:
+            if index < len(row):
+                tweets.append(row[index])
+        return tweets
+
+    if len(header) == 1:
+        return [row[0] for row in rows if row]
+
+    raise ValueError("CSV must contain a 'text' column or be a single-column CSV. Use --no-header when the file has no header row.")
+
+
+def save_output(results, output_path):
+    with open(output_path, 'w', encoding='utf-8', newline='') as fh:
+        writer = csv.writer(fh)
+        writer.writerow(['text', 'label', 'compound', 'neg', 'neu', 'pos'])
+        for item in results:
+            writer.writerow([
+                item['text'],
+                item['label'],
+                item['compound'],
+                item['scores']['neg'],
+                item['scores']['neu'],
+                item['scores']['pos'],
+            ])
+
+
+def main():
+    parser = argparse.ArgumentParser(description='Twitter sentiment analysis using NLTK VADER.')
+    parser.add_argument('--tweet', help='A single tweet text to classify.')
+    parser.add_argument('--csv', help='Path to a CSV file containing tweets. Use a text column named "text" or a single-column CSV.')
+    parser.add_argument('--delimiter', default=',', help='CSV delimiter character (default: ,).')
+    parser.add_argument('--no-header', action='store_true', help='Treat CSV input as having no header row.')
+    parser.add_argument('--output', help='Optional output CSV path for the classified results.')
+    args = parser.parse_args()
+
+    if not args.tweet and not args.csv:
+        parser.error('Provide --tweet or --csv to classify Twitter data.')
+
+    ensure_vader()
+    analyzer = SentimentIntensityAnalyzer()
+
+    results = []
+    if args.tweet:
+        results = classify_tweet_lines([args.tweet], analyzer)
+    elif args.csv:
+        if not os.path.exists(args.csv):
+            print(f'Error: CSV file not found: {args.csv}', file=sys.stderr)
+            sys.exit(1)
+        tweets = read_csv_tweets(args.csv, delimiter=args.delimiter, no_header=args.no_header)
+        results = classify_tweet_lines(tweets, analyzer)
+
+    for item in results:
+        print(f"{item['label'].upper():>8} | {item['compound']:+.3f} | {item['text']}")
+
+    if args.output:
+        save_output(results, args.output)
+        print(f'Wrote output to {args.output}')
+
+
+if __name__ == '__main__':
+    main()
