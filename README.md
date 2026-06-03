@@ -40,4 +40,5 @@ Key Highlights:
 *Scalable: Can expand from rule‑based to deep learning models.
 *Applications: Marketing, politics, customer feedback, social media analytics.
 output attached with image link
-<img width="1920" height="1080" alt="Screenshot (144)" src="https://github.com/user-attachments/assets/9d1f3908-98a1-43ce-abd2-7df8b0f289e3" />
+<img width="1920" height="1080" alt="Screenshot 2026-06-03 132416" src="https://github.com/user-attachments/assets/7e76c3d0-5f57-453a-9e89-7d8a06304075" />
+
